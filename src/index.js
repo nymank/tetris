@@ -28,31 +28,20 @@ let lastTime = 0;
 let dropCounter = 0;
 let dropInterval = 1000;
 function update(time = 0) {
-    if( !PAUSED ) {
-        const deltaTime = time - lastTime;
-        lastTime = time;
-        dropCounter += deltaTime;
-        if ( dropCounter > dropInterval ) {
-            playerDrop();
-        }
-        draw();
-        requestAnimationFrame(update);
+    const deltaTime = time - lastTime;
+    lastTime = time;
+    dropCounter += deltaTime;
+    if ( dropCounter > dropInterval ) {
+        playerDrop();
     }
+    draw();
+    requestAnimationFrame(update);
 }
 
 function pauseGame(paused) {
     return !paused;
 }
 
-function startGame(started, paused) {
-    if( !started ) { 
-        STARTED = true;
-        console.log('started')
-        update();
-    } else if( started && paused ) {
-        update();
-    }
-}
 
 function drawMatrix(matrix, offset) {
     matrix.forEach((row, y) => {
@@ -128,6 +117,35 @@ function playerReset(){
     player.pos.x = (ARENA[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
 }
 
+// check all lines
+// if line doesn't have any 0's
+// clear line
+
+/**
+ * 
+ * @param {array} row 
+ */
+function checkLine(row) {
+    for( const value of row ) {
+        if( value !== 1 ){
+            return false;
+        }
+    }
+    // all values must be 1
+    console.log(row);
+    return true;
+}
+
+function clearFullLines(arena) {
+    arena.forEach((row, y) => {
+        if ( checkLine(row) ) {
+            arena.splice(y, 1);
+            arena.unshift(createMatrix(arena[0].length));
+        }
+    });
+    merge(arena, player);
+}
+
 function createMatrix(w, h) {
     let matrix = [];
     for ( let row = 0; row < h; row++ ){
@@ -157,6 +175,7 @@ function playerDrop() {
     if( collide(ARENA, player) ) {
         player.pos.y--;
         merge(ARENA, player);
+        clearFullLines(ARENA);
         playerReset();
     }
     dropCounter = 0;
@@ -285,13 +304,20 @@ document.addEventListener('keyup', function(key) {
     }
 });
 
+function startGame() {
+    if( !STARTED ) { 
+        STARTED = true;
+        update();
+    } else if( STARTED && !PAUSED ) {
+        update();
+    }
+}
 document.getElementById('startBtn').addEventListener('click', function() {
-    startGame(STARTED, PAUSED);
+    startGame();
 });
 
-document.getElementById('pauseBtn').addEventListener('click', function() {
-    PAUSED = pauseGame(PAUSED);
-    startGame(STARTED, PAUSED);
-});
-
+// document.getElementById('pauseBtn').addEventListener('click', function() {
+//     PAUSED = !PAUSED;
+//     startGame();
+// });
 
