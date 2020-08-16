@@ -38,11 +38,6 @@ function update(time = 0) {
     requestAnimationFrame(update);
 }
 
-function pauseGame(paused) {
-    return !paused;
-}
-
-
 function drawMatrix(matrix, offset) {
     matrix.forEach((row, y) => {
         row.forEach((value, x) => {
@@ -112,7 +107,6 @@ function merge(arena, player) {
 function playerReset(){
     const pieces = 'ILJOTZS';
     player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
-    // player.matrix = createPiece('T');
     player.pos.y = 0;
     player.pos.x = (ARENA[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
 }
@@ -120,32 +114,6 @@ function playerReset(){
 // check all lines
 // if line doesn't have any 0's
 // clear line
-
-/**
- * 
- * @param {array} row 
- */
-function checkLine(row) {
-    for( const value of row ) {
-        if( value !== 1 ){
-            return false;
-        }
-    }
-    // all values must be 1
-    console.log(row);
-    return true;
-}
-
-function clearFullLines(arena) {
-    arena.forEach((row, y) => {
-        if ( checkLine(row) ) {
-            arena.splice(y, 1);
-            arena.unshift(createMatrix(arena[0].length));
-        }
-    });
-    merge(arena, player);
-}
-
 function createMatrix(w, h) {
     let matrix = [];
     for ( let row = 0; row < h; row++ ){
@@ -167,7 +135,7 @@ function collide(arena, player) {
                 }
         }
     }
-        return false;
+    return false;
 }
 
 function playerDrop() {
@@ -176,9 +144,33 @@ function playerDrop() {
         player.pos.y--;
         merge(ARENA, player);
         clearFullLines(ARENA);
+        merge(ARENA, player);
         playerReset();
     }
     dropCounter = 0;
+}
+/**
+ * 
+ * @param {array} row 
+ */
+function lineFull(row) {
+    for( const value of row ) {
+        if( value !== 1 ){
+            return false;
+        }
+    }
+    // all values must be 1
+    return true;
+}
+
+function clearFullLines(arena) {
+    arena.forEach((row, y) => {
+        if ( lineFull(row) ) {
+            arena.splice(y, 1);
+            let emptyRow = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            arena.unshift(emptyRow);
+        }
+    });
 }
 
 function instantDrop() {
@@ -187,6 +179,7 @@ function instantDrop() {
     }
     player.pos.y--;
     merge(ARENA, player);
+    clearFullLines(ARENA);
     playerReset();
     dropCounter = 0;
 }
@@ -312,6 +305,7 @@ function startGame() {
         update();
     }
 }
+
 document.getElementById('startBtn').addEventListener('click', function() {
     startGame();
 });
