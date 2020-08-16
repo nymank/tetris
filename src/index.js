@@ -19,14 +19,15 @@ document.body.insertBefore(canvas, document.body.childNodes[0]);
 
 const player = {
     pos: {x: 0, y: 0},
-    matrix: []
+    matrix: [],
+
 }
 
-playerReset();
+draw();
 
 let lastTime = 0;
 let dropCounter = 0;
-let dropInterval = 1000;
+let dropInterval = 100;
 function update(time = 0) {
     const deltaTime = time - lastTime;
     lastTime = time;
@@ -38,15 +39,6 @@ function update(time = 0) {
     requestAnimationFrame(update);
 }
 
-function drawMatrix(matrix, offset) {
-    matrix.forEach((row, y) => {
-        row.forEach((value, x) => {
-            if ( value !== 0 ) {
-                rect(1, 1, x + offset.x, y + offset.y, 'red');
-            }
-        });
-    });
-}
 
 function createPiece(type) {
     if( type === 'T' ) {
@@ -111,9 +103,6 @@ function playerReset(){
     player.pos.x = (ARENA[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
 }
 
-// check all lines
-// if line doesn't have any 0's
-// clear line
 function createMatrix(w, h) {
     let matrix = [];
     for ( let row = 0; row < h; row++ ){
@@ -213,17 +202,41 @@ function rect(width, height, x, y, color) {
     this.height = height;
     this.x = x;
     this.y = y;
-    ctx = context;
-    ctx.fillStyle = color;
-    ctx.fillRect(this.x, this.y, this.width, this.height);
-    // ctx.strokeRect(this.x, this.y, this.width, this.height);
+    context.fillStyle = color;
+    context.fillRect(this.x, this.y, this.width, this.height);
+    // context.strokeRect(this.x, this.y, this.width, this.height);
+}
+
+function drawMatrix(matrix, offset, color) {
+    matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+            if ( value !== 0 ) {
+                rect(1, 1, x + offset.x, y + offset.y, color);
+            }
+        });
+    });
 }
 
 function draw() {
     context.fillStyle = '#000';
-    context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    drawMatrix(ARENA, {x: 0, y: 0});
-    drawMatrix(player.matrix, player.pos);
+    context.fillRect(0, 0, ARENA[0].length, ARENA.length);
+    ARENA.forEach((row, y) => {
+        drawLine(0, y, row.length, y);
+    });
+    for( let i = 0; i<ARENA[0].length; i++ ){
+        drawLine(i, 0, i, ARENA.length);
+    }
+    drawMatrix(ARENA, {x: 0, y: 0}, 'red');
+    drawMatrix(player.matrix, player.pos, 'red' );
+}
+
+function drawLine(startX, startY, endX, endY){
+    context.beginPath();
+    context.moveTo(startX, startY);
+    context.lineTo(endX, endY);
+    context.lineWidth = 0.03;
+    context.strokeStyle = "rgba(100, 100, 100, 0.7)";
+    context.stroke();
 }
 
 function rotate(matrix, dir) {
@@ -245,63 +258,76 @@ function rotate(matrix, dir) {
     }
 }
 
-// function checkFullRow(row){
-//     for( let x of row ) {
-//         if ( x === 0 ) {
-//             return false;
-//         }
-//     }
-//     return true;
-// }
+// Keyboard input with customisable repeat (set to 0 for no key repeat)
+//
 
-// let lineCount = 0;
-// function line(arena) {
-//     for ( let y = 0; y < arena.length; y++ ) {
-//         if ( checkFullRow(arena[y]) ) {
-//             lineCount++;
-//             console.log(lineCount);
-//         }
-//     }
-// }
+function KeyboardController(keys, repeat) {
+    // Lookup of key keyCodes to timer ID, or null for no repeat
+    //
+    var timers= {};
+    // When key is pressed and we don't already think it's pressed, call the
+    // key action callback and set a timer to generate another one after a delay
+    //
+    document.onkeydown = function(event) {
+        var key = (event || window.event).keyCode;
+        if (!(key in keys))
+            return true;
+        if (!(key in timers)) {
+            timers[key]= null;
+            keys[key]();
+            if (repeat!==0)
+                timers[key]= setInterval(keys[key], repeat);
+        }
+        return false;
+    };
+    // Cancel timeout and mark key as released on keyup
+    //
+    document.onkeyup = function(event) {
+        var key= (event || window.event).keyCode;
+        if (key in timers) {
+            if (timers[key]!==null)
+                clearInterval(timers[key]);
+            delete timers[key];
+        }
+    };
+    // When window is unfocused we may not get key events. To prevent this
+    // causing a key to 'get stuck down', cancel all held keys
+    //
+    window.onblur= function() {
+        for (key in timers)
+            if (timers[key]!==null)
+                clearInterval(timers[key]);
+        timers= {};
+    };
+};
 
-let keysPressed = {};
+let repeat = 60;
+let keys =  {
+    37: function() { playerMove(-1); },
+    39: function() { playerMove(1); },
+    40: function() { playerDrop(); }
+}
+
+KeyboardController(keys, repeat);
 
 document.addEventListener('keydown', function(key) {
     if( STARTED && !PAUSED ){
-        if( key.code === 'ArrowUp' ) {
+        if( key.keyCode === 38 ) {
             playerRotate(1);
         }
-        else if( key.code === 'KeyQ' ) {
-            playerRotate(-1);
-        }
-        else if( (key.code === 'ArrowLeft') ){
-            playerMove(-1);
-        }
-        else if( (key.code === 'ArrowRight') ){
-            playerMove(1);
-        }
-        else if( key.code === 'ArrowDown' ){
-            playerDrop();
-        }
-        else if( key.code === 'Space' ){
+        else if( key.keyCode === 32 ){
             instantDrop();
         }
     }
-    if ( key.code === 'KeyP' && STARTED ){
-            pauseGame();
-    }
-});
-document.addEventListener('keyup', function(key) {
-    if ( key.code in keysPressed ) {
-        keysPressed[key.code] = false;
-    }
+    // if ( key.keyCode === 27 && STARTED ){
+    //         pauseGame();
+    // }
 });
 
 function startGame() {
     if( !STARTED ) { 
         STARTED = true;
-        update();
-    } else if( STARTED && !PAUSED ) {
+        playerReset();
         update();
     }
 }
