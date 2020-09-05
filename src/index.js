@@ -20,15 +20,19 @@ document.body.insertBefore(canvas, document.body.childNodes[0]);
 const player = {
     pos: {x: 0, y: 0},
     matrix: [],
-
+    color: ''
 }
 
 draw();
 
+
 let lastTime = 0;
 let dropCounter = 0;
-let dropInterval = 100;
+let dropInterval = 800;
 function update(time = 0) {
+    if( lastTime % 2000 === 0) {
+        // dropInterval -= 100;
+    }
     const deltaTime = time - lastTime;
     lastTime = time;
     dropCounter += deltaTime;
@@ -42,29 +46,34 @@ function update(time = 0) {
 
 function createPiece(type) {
     if( type === 'T' ) {
+        player.color = 'purple';
         return [
             [0, 1, 0],
             [1, 1, 1],
             [0, 0, 0],
         ];
     } else if( type === 'O' ) {
+        player.color = 'yellow';
         return [
             [1, 1],
             [1, 1]
         ];
     } else if( type === 'J' ) {
+        player.color = 'blue';
         return [
             [0, 1, 0],
             [0, 1, 0],
             [1, 1, 0]
         ];
     } else if( type === 'L' ) {
+        player.color = 'red';
         return [
             [0, 1, 0],
             [0, 1, 0],
             [0, 1, 1]
         ];
     } else if( type === 'I' ) {
+        player.color = 'lightblue';
         return [
             [0, 1, 0, 0],
             [0, 1, 0, 0],
@@ -72,12 +81,14 @@ function createPiece(type) {
             [0, 1, 0, 0]
         ];
     } else if( type === 'S' ) {
+        player.color = 'pink';
         return [
             [0, 1, 1],
             [1, 1, 0],
             [0, 0, 0]
         ];
     } else if( type === 'Z' ) {
+        player.color = 'orange';
         return [
             [1, 1, 0],
             [0, 1, 1],
@@ -133,7 +144,7 @@ function playerDrop() {
         player.pos.y--;
         merge(ARENA, player);
         clearFullLines(ARENA);
-        merge(ARENA, player);
+        draw();
         playerReset();
     }
     dropCounter = 0;
@@ -204,6 +215,8 @@ function rect(width, height, x, y, color) {
     this.y = y;
     context.fillStyle = color;
     context.fillRect(this.x, this.y, this.width, this.height);
+    context.lineWidth = 0.1;
+    context.strokeRect(this.x, this.y, this.width, this.height);
     // context.strokeRect(this.x, this.y, this.width, this.height);
 }
 
@@ -211,7 +224,11 @@ function drawMatrix(matrix, offset, color) {
     matrix.forEach((row, y) => {
         row.forEach((value, x) => {
             if ( value !== 0 ) {
-                rect(1, 1, x + offset.x, y + offset.y, color);
+                if( matrix === ARENA ) {
+                    rect(1, 1, x + offset.x, y + offset.y, 'red');
+                } else {
+                    rect(1, 1, x + offset.x, y + offset.y, player.color);
+                }
             }
         });
     });
@@ -220,6 +237,7 @@ function drawMatrix(matrix, offset, color) {
 function draw() {
     context.fillStyle = '#000';
     context.fillRect(0, 0, ARENA[0].length, ARENA.length);
+    // draw grid lines
     ARENA.forEach((row, y) => {
         drawLine(0, y, row.length, y);
     });
@@ -260,7 +278,6 @@ function rotate(matrix, dir) {
 
 // Keyboard input with customisable repeat (set to 0 for no key repeat)
 //
-
 function KeyboardController(keys, repeat) {
     // Lookup of key keyCodes to timer ID, or null for no repeat
     //
@@ -270,16 +287,17 @@ function KeyboardController(keys, repeat) {
     //
     document.onkeydown = function(event) {
         var key = (event || window.event).keyCode;
-        if (!(key in keys))
+        if (!(key in keys)) {
             return true;
+        }
         if (!(key in timers)) {
             timers[key]= null;
             keys[key]();
             if (repeat!==0)
-                timers[key]= setInterval(keys[key], repeat);
-        }
+            timers[key] = setInterval(keys[key], repeat);
+            }
         return false;
-    };
+    }
     // Cancel timeout and mark key as released on keyup
     //
     document.onkeyup = function(event) {
@@ -299,7 +317,7 @@ function KeyboardController(keys, repeat) {
                 clearInterval(timers[key]);
         timers= {};
     };
-};
+}
 
 let repeat = 60;
 let keys =  {
@@ -307,7 +325,6 @@ let keys =  {
     39: function() { playerMove(1); },
     40: function() { playerDrop(); }
 }
-
 KeyboardController(keys, repeat);
 
 document.addEventListener('keydown', function(key) {
