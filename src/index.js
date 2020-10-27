@@ -8,20 +8,45 @@ let CANVAS_HEIGHT = ARENA_HEIGHT * BLOCK;
 
 let PAUSED = false;
 let STARTED = false;
+let GAMEOVER = false;
 
 let canvas = document.getElementById('canvas');
 canvas.width = CANVAS_WIDTH;
 canvas.height = CANVAS_HEIGHT;
 canvas.id = 'canvas';
 let context = canvas.getContext("2d");
-context.scale(BLOCK, BLOCK);
 
-
-const player = {
+let player = {
     pos: {x: 0, y: 0},
     matrix: [],
     color: ''
+}    
+
+function resetGame(){
+    ARENA = createMatrix(ARENA_WIDTH, ARENA_HEIGHT);
+    points = 0;
+    totalTime = 0;
+    lastTime = 0;
+    dropCounter = 0;
+    dropInterval = 800;
+    STARTED = true;
+    PAUSED = false;
+    GAMEOVER = false;
+    player = {
+        pos: {x: 0, y: 0},
+        matrix: [],
+        color: ''
+    }
+    playerReset();
+    draw();
+    document.getElementById("startBtn").style = "visibility:visible;";
+    document.getElementById('pauseBtn').style = "visibility:hidden;";
+    document.getElementById('pointsP').innerHTML = "";
+
 }
+
+context.scale(BLOCK, BLOCK);
+
 
 draw();
 
@@ -39,7 +64,7 @@ function update(time = 0) {
         playerDrop();
     }
     draw();
-    if( !PAUSED ) {
+    if( !GAMEOVER && !PAUSED ) {
         requestAnimationFrame(update);
     }
 }
@@ -113,9 +138,11 @@ function playerReset(){
     player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
     player.pos.y = 0;
     player.pos.x = (ARENA[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
+    // game over situation
     if( collide(ARENA, player) ) {
-        PAUSED = true;
-        document.getElementById("pointsP").innerHTML = `Game over. Points: ${points}`
+        GAMEOVER = true;
+        document.getElementById("pointsP").innerHTML = `Game over. Points: ${points}`;
+        document.getElementById("pauseBtn").innerHTML = "Try again";
     }
 }
 
@@ -290,7 +317,8 @@ function rotate(matrix, dir) {
 }
 
 // Keyboard input with customisable repeat (set to 0 for no key repeat)
-// made by StackOverflow user: bobince
+// credit to StackOverflow user bobince
+// https://stackoverflow.com/questions/3691461/remove-key-press-delay-in-javascript
 function KeyboardController(keys, repeat) {
     // Lookup of key keyCodes to timer ID, or null for no repeat
     //
@@ -299,26 +327,30 @@ function KeyboardController(keys, repeat) {
     // key action callback and set a timer to generate another one after a delay
     //
     document.onkeydown = function(event) {
-        var key = (event || window.event).keyCode;
-        if (!(key in keys)) {
-            return true;
-        }
-        if (!(key in timers)) {
-            timers[key]= null;
-            keys[key]();
-            if (repeat!==0)
-            timers[key] = setInterval(keys[key], repeat);
+        if( !PAUSED ) {
+            var key = (event || window.event).keyCode;
+            if (!(key in keys)) {
+                return true;
             }
-        return false;
+            if (!(key in timers)) {
+                timers[key]= null;
+                keys[key]();
+                if (repeat!==0)
+                timers[key] = setInterval(keys[key], repeat);
+                }
+            return false;
+        }
     }
     // Cancel timeout and mark key as released on keyup
     //
     document.onkeyup = function(event) {
-        var key= (event || window.event).keyCode;
-        if (key in timers) {
-            if (timers[key]!==null)
-                clearInterval(timers[key]);
-            delete timers[key];
+        if( !PAUSED ) {
+            var key= (event || window.event).keyCode;
+            if (key in timers) {
+                if (timers[key]!==null)
+                    clearInterval(timers[key]);
+                delete timers[key];
+            }
         }
     };
     // When window is unfocused we may not get key events. To prevent this
@@ -376,8 +408,12 @@ document.getElementById('startBtn').addEventListener('click', function() {
 
 
 document.getElementById('pauseBtn').addEventListener('click', function() {
-    document.getElementById('pauseBtn').innerHTML = "Resume";
-    PAUSED = !PAUSED;
-    startGame();
+    if ( !GAMEOVER ) {
+        document.getElementById('pauseBtn').innerHTML = "Resume";
+        PAUSED = !PAUSED;
+        startGame();
+    } else {
+        document.getElementById('pauseBtn').innerHTML = "Pause";
+        resetGame();
+    }
 });
-
