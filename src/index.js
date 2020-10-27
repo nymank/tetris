@@ -29,7 +29,7 @@ function resetGame(){
     lastTime = 0;
     dropCounter = 0;
     dropInterval = 800;
-    STARTED = true;
+    STARTED = false;
     PAUSED = false;
     GAMEOVER = false;
     player = {
@@ -42,7 +42,6 @@ function resetGame(){
     document.getElementById("startBtn").style = "visibility:visible;";
     document.getElementById('pauseBtn').style = "visibility:hidden;";
     document.getElementById('pointsP').innerHTML = "";
-
 }
 
 context.scale(BLOCK, BLOCK);
@@ -327,7 +326,7 @@ function KeyboardController(keys, repeat) {
     // key action callback and set a timer to generate another one after a delay
     //
     document.onkeydown = function(event) {
-        if( !PAUSED ) {
+        if( !PAUSED && STARTED && !GAMEOVER ) {
             var key = (event || window.event).keyCode;
             if (!(key in keys)) {
                 return true;
@@ -344,7 +343,7 @@ function KeyboardController(keys, repeat) {
     // Cancel timeout and mark key as released on keyup
     //
     document.onkeyup = function(event) {
-        if( !PAUSED ) {
+        if( !PAUSED && STARTED && !GAMEOVER ) {
             var key= (event || window.event).keyCode;
             if (key in timers) {
                 if (timers[key]!==null)
