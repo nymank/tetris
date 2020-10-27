@@ -9,13 +9,13 @@ let CANVAS_HEIGHT = ARENA_HEIGHT * BLOCK;
 let PAUSED = false;
 let STARTED = false;
 
-let canvas = document.createElement('canvas');
+let canvas = document.getElementById('canvas');
 canvas.width = CANVAS_WIDTH;
 canvas.height = CANVAS_HEIGHT;
 canvas.id = 'canvas';
 let context = canvas.getContext("2d");
 context.scale(BLOCK, BLOCK);
-document.body.insertBefore(canvas, document.body.childNodes[0]);
+
 
 const player = {
     pos: {x: 0, y: 0},
@@ -25,14 +25,13 @@ const player = {
 
 draw();
 
+let points = 0;
 
+let totalTime = 0;
 let lastTime = 0;
 let dropCounter = 0;
 let dropInterval = 800;
 function update(time = 0) {
-    if( lastTime % 2000 === 0) {
-        // dropInterval -= 100;
-    }
     const deltaTime = time - lastTime;
     lastTime = time;
     dropCounter += deltaTime;
@@ -40,7 +39,9 @@ function update(time = 0) {
         playerDrop();
     }
     draw();
-    requestAnimationFrame(update);
+    if( !PAUSED ) {
+        requestAnimationFrame(update);
+    }
 }
 
 
@@ -112,6 +113,10 @@ function playerReset(){
     player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
     player.pos.y = 0;
     player.pos.x = (ARENA[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
+    if( collide(ARENA, player) ) {
+        PAUSED = true;
+        document.getElementById("pointsP").innerHTML = `Game over. Points: ${points}`
+    }
 }
 
 function createMatrix(w, h) {
@@ -164,13 +169,21 @@ function lineFull(row) {
 }
 
 function clearFullLines(arena) {
+    let addedPoints = 0;
+    let clearedRows = 0;
     arena.forEach((row, y) => {
         if ( lineFull(row) ) {
             arena.splice(y, 1);
             let emptyRow = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
             arena.unshift(emptyRow);
+            clearedRows++;
         }
     });
+    addedPoints += 100*clearedRows;
+    if (clearedRows === 4) {
+        addedPoints *= 2;
+    }
+    points += addedPoints;
 }
 
 function instantDrop() {
@@ -277,7 +290,7 @@ function rotate(matrix, dir) {
 }
 
 // Keyboard input with customisable repeat (set to 0 for no key repeat)
-//
+// made by StackOverflow user: bobince
 function KeyboardController(keys, repeat) {
     // Lookup of key keyCodes to timer ID, or null for no repeat
     //
@@ -320,7 +333,7 @@ function KeyboardController(keys, repeat) {
 }
 
 let repeat = 60;
-let keys =  {
+let keys = {
     37: function() { playerMove(-1); },
     39: function() { playerMove(1); },
     40: function() { playerDrop(); }
@@ -336,9 +349,9 @@ document.addEventListener('keydown', function(key) {
             instantDrop();
         }
     }
-    // if ( key.keyCode === 27 && STARTED ){
-    //         pauseGame();
-    // }
+    if ( key.key === 'KeyP' && STARTED ){
+            startGame();
+    }
 });
 
 function startGame() {
@@ -346,15 +359,25 @@ function startGame() {
         STARTED = true;
         playerReset();
         update();
+    } else if( STARTED && !PAUSED ) {
+        document.getElementById('pauseBtn').innerHTML = "Pause";
+        update();
     }
 }
 
 document.getElementById('startBtn').addEventListener('click', function() {
     startGame();
+    document.getElementById("startBtn").style = "visibility:hidden;";
+    document.getElementById('pauseBtn').style = "visibility:visible;";
+    let timeout = setInterval(() => {
+        totalTime++;
+    }, 1000);
 });
 
-// document.getElementById('pauseBtn').addEventListener('click', function() {
-//     PAUSED = !PAUSED;
-//     startGame();
-// });
+
+document.getElementById('pauseBtn').addEventListener('click', function() {
+    document.getElementById('pauseBtn').innerHTML = "Resume";
+    PAUSED = !PAUSED;
+    startGame();
+});
 

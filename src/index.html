@@ -6,16 +6,27 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
             #canvas {
-                margin-left: 20%;
-                margin-top: 100px;
                 border: 1px solid black;
             }
         </style>
-        <script></script>
     </head>
     <body>
-        <button id='startBtn' onclick='document.getElementById("startBtn").style.visibility = "hidden"'>Start</button>
-        <!-- <button id='pauseBtn'>Pause</button> -->
+        <div class="container" style="width:500px;margin-top:50px">
+            <div class="row">
+                <div class="col-sm-2" style="align-items:center;">
+                </div>
+                <div class="col-sm-8">
+                    <!-- <div class="d-flex flex-column" > -->
+                        <canvas id="canvas"></canvas>
+                    <!-- </div> -->
+                </div>
+                <div class="col-sm-2" style="align-items:center;">
+                    <button id='startBtn'>Start</button>
+                    <p id="pointsP"></p>
+                    <button id='pauseBtn' style="visibility:hidden;">Pause</button>
+                </div>
+            </div>
+        </div>
         <script src='/index.js'></script>
     </body>
 </html>
