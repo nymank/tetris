@@ -37,7 +37,6 @@ function resetGame(){
         matrix: [],
         color: ''
     }
-    playerReset();
     draw();
     document.getElementById("startBtn").style = "visibility:visible;";
     document.getElementById('pauseBtn').style = "visibility:hidden;";
@@ -156,6 +155,11 @@ function createMatrix(w, h) {
     return matrix;
 }
 
+/**
+ * Checks if arena and player are colliding.
+ * @param {Array} arena 
+ * @param {Array} player 
+ */
 function collide(arena, player) {
     const [matrix, offset] = [player.matrix, player.pos];
     for( let y = 0; y < matrix.length; y++ ){
@@ -169,22 +173,25 @@ function collide(arena, player) {
     return false;
 }
 
+
+//Drop player by one. 
 function playerDrop() {
     player.pos.y++;
     if( collide(ARENA, player) ) {
         player.pos.y--;
         merge(ARENA, player);
-        clearFullLines(ARENA);
+        clearFullRows(ARENA);
         draw();
         playerReset();
     }
     dropCounter = 0;
 }
 /**
- * 
- * @param {array} row 
+ * Checks if a row is full.
+ * @param {Array<Number>} row array with 1 or 0 as values
+ * @return {boolean} true/false
  */
-function lineFull(row) {
+function rowFull(row) {
     for( const value of row ) {
         if( value !== 1 ){
             return false;
@@ -194,11 +201,16 @@ function lineFull(row) {
     return true;
 }
 
-function clearFullLines(arena) {
+/**
+ * Deletes all full rows from the ARENA, adds empty row to first position in ARENA.
+ * Also adds points according to the amount of lines cleared.
+ * @param {array} arena game arena
+ */
+function clearFullRows(arena) {
     let addedPoints = 0;
     let clearedRows = 0;
     arena.forEach((row, y) => {
-        if ( lineFull(row) ) {
+        if ( rowFull(row) ) {
             arena.splice(y, 1);
             let emptyRow = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
             arena.unshift(emptyRow);
@@ -210,19 +222,25 @@ function clearFullLines(arena) {
         addedPoints *= 2;
     }
     points += addedPoints;
+    document.getElementById("pointsP").innerHTML = `Points: ${points}`;
 }
 
+//Drop player to the bottom
 function instantDrop() {
     while( !collide(ARENA, player) ) {
         player.pos.y++;
     }
     player.pos.y--;
     merge(ARENA, player);
-    clearFullLines(ARENA);
+    clearFullRows(ARENA);
     playerReset();
     dropCounter = 0;
 }
 
+/**
+ * Move player.
+ * @param {Number} dir 1 or -1, 1 => move right, -1 left
+ */
 function playerMove(dir) {
     player.pos.x += dir;
     let offset = 1;
@@ -232,6 +250,10 @@ function playerMove(dir) {
     }
 }
 
+/**
+ * Rotate player.
+ * @param {Number} dir 1 or -1 based on rotation direction
+ */
 function playerRotate(dir) {
     const pos = player.pos.x;
     let offset = 1;
@@ -296,6 +318,11 @@ function drawLine(startX, startY, endX, endY){
     context.stroke();
 }
 
+/**
+ * Rotate matrix according to tetris mechanics.
+ * @param {Array} matrix n by n matrix
+ * @param {Number} dir -1 or 1 based on rotation direction
+ */
 function rotate(matrix, dir) {
     for( let y=0; y < matrix.length; y++ ) {
         for( let x=0; x < y; x++ ) {
@@ -372,7 +399,7 @@ let keys = {
 KeyboardController(keys, repeat);
 
 document.addEventListener('keydown', function(key) {
-    if( STARTED && !PAUSED ){
+    if( STARTED && !PAUSED && !GAMEOVER ){
         if( key.keyCode === 38 ) {
             playerRotate(1);
         }
@@ -388,7 +415,6 @@ document.addEventListener('keydown', function(key) {
 function startGame() {
     if( !STARTED ) { 
         STARTED = true;
-        playerReset();
         update();
     } else if( STARTED && !PAUSED ) {
         document.getElementById('pauseBtn').innerHTML = "Pause";
@@ -398,6 +424,7 @@ function startGame() {
 
 document.getElementById('startBtn').addEventListener('click', function() {
     startGame();
+    playerReset();
     document.getElementById("startBtn").style = "visibility:hidden;";
     document.getElementById('pauseBtn').style = "visibility:visible;";
     let timeout = setInterval(() => {
@@ -407,6 +434,7 @@ document.getElementById('startBtn').addEventListener('click', function() {
 
 
 document.getElementById('pauseBtn').addEventListener('click', function() {
+    document.getElementById('pauseBtn').blur();
     if ( !GAMEOVER ) {
         document.getElementById('pauseBtn').innerHTML = "Resume";
         PAUSED = !PAUSED;

@@ -11,4 +11,4 @@ Controls:
 
 Scoring:
 
-    100 points per cleared line. Four rows at the same time (Tetris) gives 800 points.
+    100 points per cleared row. Four rows at the same time (Tetris) gives 800 points (four rows times two).
