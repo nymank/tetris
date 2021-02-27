@@ -11,6 +11,6 @@ app.get('/', (req, res) => {
     res.sendFile(`${__dirname}/index.html`);
 });
 
-app.get('/index.js', (req, res) => {
+app.get('/tetris/index.js', (req, res) => {
     res.sendFile(`${__dirname}/index.js`);
 });
