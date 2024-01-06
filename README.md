@@ -1,6 +1,8 @@
 Tetris game by Kalle Nyman
 2020
 
+Play here: https://nymank.github.io/tetris
+
 Controls: 
 
     rotate: Arrow up
